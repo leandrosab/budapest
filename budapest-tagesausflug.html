@@ -91,7 +91,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tram);outline-offse
   <header>
     <div>
       <h1>Budapest an einem Tag</h1>
-      <p id="sub">13 Stationen, Pest und Buda</p>
+      <p id="sub">9 Etappen, Pest und Buda</p>
     </div>
     <div class="clock" id="clock">--:--</div>
   </header>
@@ -111,34 +111,33 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--tram);outline-offse
 <script>
 const PLAN = [
  {t:"08:00",end:"09:00",title:"Parlament",c:"#14243a",
-  text:"Start am Kossuth-Lajos-Platz. Parlament von außen anschauen, dann zu Fuss durch die Innenstadt.",
+  text:"Start am Kossuth-Lajos-Platz. Parlament von außen anschauen, dann zu Fuss weiter Richtung Szabadság tér.",
   places:[["Parlament / Kossuth tér",47.5070,19.0457]]},
- {t:"09:00",end:"10:30",title:"St.-Stephans-Basilika",c:"#b4532a",
-  text:"Basilika, Szabadság tér, Staatsoper von außen und ein Stück Andrássy út.",
-  places:[["Szabadság tér",47.5040,19.0503],["St.-Stephans-Basilika",47.5009,19.0539],["Ungarische Staatsoper",47.5027,19.0584],["Andrássy út",47.5040,19.0605]]},
- {t:"10:30",end:"12:00",title:"Váci utca und Vörösmarty tér",c:"#c9962b",
+ {t:"09:00",end:"10:00",title:"St.-Stephans-Basilika",c:"#b4532a",
+  text:"Szabadság tér, Basilika und die Staatsoper von außen. Bei der Oper beginnt die Andrássy út.",
+  places:[["Szabadság tér",47.5040,19.0503],["St.-Stephans-Basilika",47.5009,19.0539],["Ungarische Staatsoper",47.5027,19.0584]]},
+ {t:"10:00",end:"12:15",title:"Andrássy út bis Heldenplatz",c:"#d17a22",
+  text:"Die ganze Andrássy út zu Fuss hoch (ca. 2,5 km, 40 Min.). Dann Heldenplatz, Museum der Bildenden Künste, Kunsthalle, Burg Vajdahunyad, Stadtwäldchen und Széchenyi-Bad von außen.",
+  places:[["Andrássy út / Oktogon",47.5056,19.0636],["Heldenplatz",47.5149,19.0779],["Museum der Bildenden Künste",47.5161,19.0763],["Kunsthalle",47.5141,19.0795],["Burg Vajdahunyad",47.5153,19.0843],["Széchenyi-Thermalbad",47.5188,19.0816]]},
+ {t:"12:15",end:"13:15",title:"Váci utca und Vörösmarty tér",c:"#c9962b",
   text:"Vörösmarty tér, Kettenbrücke, Donaupromenade und durch die Váci utca Richtung Markthalle.",
-  places:[["Vörösmarty tér",47.4963,19.0509],["Kettenbrücke (Pester Seite)",47.4993,19.0466],["Donaupromenade",47.4955,19.0475],["Váci utca",47.4920,19.0555]]},
- {t:"12:00",end:"13:30",title:"Große Markthalle",c:"#2f6b4f",
+  places:[["Vörösmarty tér",47.4963,19.0509],["Kettenbrücke (Pester Seite)",47.4993,19.0466],["Donaupromenade",47.4955,19.0475],["Váci utca",47.4920,19.0555]],
+  before:"🚇 Metro M1 ab Széchenyi fürdő bis Vörösmarty tér (fährt unter der Andrássy út). Oder zu Fuss zurück, ca. 40 Min."},
+ {t:"13:15",end:"14:15",title:"Große Markthalle",c:"#2f6b4f",
   text:"Mittagessen in der Markthalle, danach über die Freiheitsbrücke nach Buda.",
   places:[["Große Markthalle",47.4869,19.0586],["Freiheitsbrücke",47.4858,19.0540]]},
- {t:"13:30",end:"15:30",title:"Gellértberg und Zitadelle",c:"#6a4c93",
-  text:"Aufstieg zur Zitadelle, 1,5 bis 2 Stunden mit Aussicht und Fotos. Blick auf Donau, Parlament, Kettenbrücke, Burg und Freiheitsbrücke.",
+ {t:"14:15",end:"16:00",title:"Gellértberg und Zitadelle",c:"#6a4c93",
+  text:"Aufstieg zur Zitadelle mit Aussicht und Fotos. Blick auf Donau, Parlament, Kettenbrücke, Burg und Freiheitsbrücke.",
   places:[["Freiheitsstatue / Zitadelle",47.4866,19.0468]],must:true},
- {t:"15:30",end:"16:00",title:"Várkert Bazár",c:"#3a7ca5",
+ {t:"16:00",end:"16:30",title:"Várkert Bazár",c:"#3a7ca5",
   text:"Gartenanlagen, historische Gebäude und Blick auf die Donau.",
   places:[["Várkert Bazár",47.4950,19.0418]]},
- {t:"16:00",end:"18:30",title:"Budaer Burgviertel",c:"#9b2335",
-  text:"Burg, Präsidentenpalast, historische Gassen, Matthiaskirche und Fischerbastei. 2 bis 2,5 Stunden. Fischerbastei: Foto mit dem Parlament im Hintergrund.",
+ {t:"16:30",end:"19:00",title:"Budaer Burgviertel",c:"#9b2335",
+  text:"Burg, Präsidentenpalast, historische Gassen, Matthiaskirche und Fischerbastei. Fischerbastei am besten zum Sonnenuntergang, mit dem Parlament im Hintergrund.",
   places:[["Budaer Burg",47.4961,19.0398],["Präsidentenpalast",47.4984,19.0389],["Matthiaskirche",47.5019,19.0342],["Fischerbastei",47.5024,19.0350]],must:true},
- {t:"18:30",end:"20:30",title:"Heldenplatz und Stadtwäldchen",c:"#d17a22",
-  text:"Mit der Metro zum Heldenplatz. Museum der Bildenden Künste, Kunsthalle, Burg Vajdahunyad, Stadtwäldchen und Széchenyi-Bad von außen.",
-  places:[["Heldenplatz",47.5149,19.0779],["Museum der Bildenden Künste",47.5161,19.0763],["Kunsthalle",47.5141,19.0795],["Burg Vajdahunyad",47.5153,19.0843],["Széchenyi-Thermalbad",47.5188,19.0816]],
-  before:"🚇 Metro: Batthyány tér (M2) bis Deák tér, dann M1 bis Hősök tere"},
- {t:"20:30",end:"23:00",title:"Budapest bei Nacht",c:"#1f3f6e",
-  text:"Spaziergang an der Donau oder Schifffahrt: beleuchtetes Parlament vom Pester Ufer, Kettenbrücke, Blick auf die Burg.",
-  places:[["Kettenbrücke bei Nacht",47.4990,19.0455],["Donauufer mit Parlamentsblick",47.5065,19.0440]],
-  before:"🚇 Metro M1 zurück bis Vörösmarty tér"}
+ {t:"19:00",end:"23:00",title:"Budapest bei Nacht",c:"#1f3f6e",
+  text:"Vom Burgviertel zu Fuss runter und über die Kettenbrücke ans Pester Ufer. Beleuchtetes Parlament, Kettenbrücke und Blick auf die Burg. Alternativ eine Schifffahrt.",
+  places:[["Kettenbrücke bei Nacht",47.4990,19.0455],["Donauufer mit Parlamentsblick",47.5065,19.0440]]}
 ];
 
 const $=s=>document.querySelector(s);
@@ -251,7 +250,7 @@ PLAN.forEach((s,i)=>{
   list.appendChild(el);
 });
 const note=document.createElement("div");note.className="note";
-note.innerHTML="<b>Wenn die Zeit knapp wird:</b> zuerst Váci utca oder Heldenplatz kürzen. Zitadelle und Fischerbastei behalten.";
+note.innerHTML="<b>Wenn die Zeit knapp wird:</b> zuerst Váci utca oder Stadtwäldchen kürzen. Zitadelle und Fischerbastei behalten.";
 list.appendChild(note);
 
 list.addEventListener("click",e=>{
