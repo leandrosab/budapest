@@ -4,298 +4,449 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#14243a">
-<title>Budapest an einem Tag</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇭🇺</text></svg>">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b1220">
+<title>Budapest zu Fuss</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌉</text></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@500;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --danube:#14243a; --danube-2:#20385a;
-  --stone:#ecebe5; --paper:#f7f6f2; --ink:#1a1d22; --muted:#5d6470;
-  --tram:#f2c230; --zsolnay:#2f6b4f; --tile:#b4532a;
-  --line:rgba(20,36,58,.14); --card:#ffffff;
+  --ink:#0b1220; --glass:rgba(11,18,32,.82); --glass-2:rgba(255,255,255,.06);
+  --line:rgba(255,255,255,.1); --txt:#eef2f7; --muted:#9aa8bb;
+  --gold:#f6c453; --done:#3ddc97; --must:#ff6b8b; --me:#3b8bff;
   --display:"Bricolage Grotesque", ui-rounded, system-ui, -apple-system, sans-serif;
   --body:"Source Sans 3", system-ui, -apple-system, "Helvetica Neue", sans-serif;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --stone:#0f1a2a; --paper:#0b1422; --ink:#eef0f3; --muted:#9aa6b6;
-    --line:rgba(255,255,255,.12); --card:#13213a;
-  }
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ink);color:var(--txt);font-family:var(--body);-webkit-text-size-adjust:100%;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+#map{position:fixed;inset:0;background:#0b1220;z-index:0}
+
+/* ---------- Floating header ---------- */
+.top{position:fixed;z-index:600;left:12px;right:12px;top:calc(var(--st) + 10px);display:flex;gap:10px;align-items:stretch;pointer-events:none}
+.brand{pointer-events:auto;flex:1;min-width:0;background:var(--glass);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border:1px solid var(--line);border-radius:20px;padding:10px 12px 10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.brand h1{margin:0;font-family:var(--display);font-weight:800;font-size:1.35rem;line-height:1;letter-spacing:-.02em;white-space:nowrap}
+.brand h1 em{font-style:normal;background:linear-gradient(90deg,#ffb86b,#f6c453 40%,#ff6b8b);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand .meta{font-size:.78rem;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand .txt{flex:1;min-width:0}
+.ring{position:relative;width:46px;height:46px;flex:none}
+.ring svg{width:46px;height:46px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:5}
+.ring .bg{stroke:rgba(255,255,255,.12)}
+.ring .fg{stroke:url(#rg);stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font:700 .72rem var(--mono)}
+.clock{pointer-events:auto;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:20px;padding:8px 12px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.clock .t{font:700 1.25rem var(--mono);color:var(--gold);line-height:1}
+.clock .s{font-size:.72rem;color:var(--muted);margin-top:5px;white-space:nowrap}
+
+/* ---------- Map controls ---------- */
+.ctrls{position:fixed;z-index:600;right:12px;top:calc(var(--st) + 86px);display:flex;flex-direction:column;gap:10px}
+.ctrls button{width:46px;height:46px;border-radius:15px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);font-size:19px;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .15s}
+.ctrls button:active{transform:scale(.92)}
+.ctrls button.on{background:var(--me);border-color:transparent}
+.ctrls button.play.on{background:var(--gold);color:var(--ink)}
+.toast{position:fixed;z-index:700;left:50%;top:calc(var(--st) + 84px);transform:translateX(-50%) translateY(-10px);opacity:0;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);padding:9px 14px;border-radius:14px;font-size:.88rem;max-width:calc(100% - 90px);transition:.3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------- Bottom sheet ---------- */
+.sheet{position:fixed;z-index:650;left:0;right:0;top:0;height:100%;transform:translateY(100%);background:linear-gradient(180deg,rgba(14,22,40,.92),rgba(9,14,26,.97));backdrop-filter:blur(24px) saturate(1.3);-webkit-backdrop-filter:blur(24px) saturate(1.3);border-top:1px solid var(--line);border-radius:26px 26px 0 0;box-shadow:0 -20px 50px rgba(0,0,0,.45);display:flex;flex-direction:column;will-change:transform}
+.sheet.anim{transition:transform .38s cubic-bezier(.2,.9,.25,1)}
+.grab{flex:none;touch-action:none;padding:8px 16px 12px;cursor:grab}
+.handle{width:42px;height:5px;border-radius:3px;background:rgba(255,255,255,.28);margin:0 auto 12px}
+.next{display:flex;gap:12px;align-items:center}
+.next .ico{width:52px;height:52px;border-radius:16px;flex:none;display:grid;place-items:center;font-size:26px;background:var(--c,#333);box-shadow:0 0 0 3px rgba(255,255,255,.08),0 8px 24px color-mix(in srgb,var(--c,#000) 45%,transparent)}
+.next .info{flex:1;min-width:0}
+.next .lbl{font:700 .68rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.next .name{font-family:var(--display);font-weight:700;font-size:1.2rem;line-height:1.15;margin:3px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.next .sub{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+.arrow{display:inline-block;transition:transform .4s}
+.btn{border:0;border-radius:14px;padding:11px 14px;font-weight:700;font-size:.9rem;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn.gold{background:var(--gold);color:var(--ink)}
+.btn.ghost{background:var(--glass-2);color:var(--txt);border:1px solid var(--line)}
+.btn.ok{background:var(--done);color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+.stat{background:var(--glass-2);border:1px solid var(--line);border-radius:14px;padding:9px 6px;text-align:center}
+.stat b{display:block;font:700 1rem var(--mono)}
+.stat span{font-size:.7rem;color:var(--muted)}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:4px 0 calc(var(--sb) + 40px)}
+
+.sec{position:sticky;top:0;z-index:2;padding:14px 18px 10px;background:linear-gradient(180deg,rgba(10,16,30,.98) 70%,rgba(10,16,30,0));display:flex;align-items:baseline;gap:10px}
+.sec h2{margin:0;font-family:var(--display);font-weight:800;font-size:1.15rem;letter-spacing:-.01em;color:var(--c)}
+.sec span{font:500 .75rem var(--mono);color:var(--muted)}
+
+.item{display:grid;grid-template-columns:54px 1fr;padding:0 16px 0 0;position:relative}
+.item .tm{font:700 .82rem var(--mono);text-align:right;padding:16px 10px 0 0;color:var(--muted)}
+.item .card{position:relative;margin:4px 0 4px 18px;padding:12px 12px 12px 14px;border-radius:18px;background:var(--glass-2);border:1px solid var(--line);transition:background .25s,border-color .25s,transform .25s}
+.item .card::before{content:"";position:absolute;left:-19px;top:-6px;bottom:-6px;width:3px;background:linear-gradient(var(--c),var(--c2));opacity:.55}
+.item .dot{position:absolute;left:-29px;top:14px;width:23px;height:23px;border-radius:50%;background:var(--c);color:var(--ink);display:grid;place-items:center;font:700 .68rem var(--mono);border:3px solid #0d1528;z-index:1}
+.item.done .dot{background:var(--done)}
+.item.now .card{border-color:var(--gold);background:rgba(246,196,83,.09)}
+.item.active .card{border-color:#fff;transform:scale(1.015)}
+.item.done .card h3{opacity:.55;text-decoration:line-through;text-decoration-thickness:2px}
+.card h3{margin:0;font-family:var(--display);font-weight:700;font-size:1.06rem;line-height:1.2;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h3 .e{font-size:1.2rem}
+.tag{font:700 .62rem var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border-radius:8px}
+.tag.must{background:rgba(255,107,139,.18);color:var(--must)}
+.tag.now{background:var(--gold);color:var(--ink)}
+.tag.warn{background:rgba(255,184,107,.16);color:#ffb86b}
+.card p{margin:6px 0 10px;color:var(--muted);font-size:.9rem;line-height:1.45}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.acts .btn{padding:8px 11px;font-size:.82rem;border-radius:11px}
+.walk{margin-left:72px;padding:6px 0 6px 0;font:500 .74rem var(--mono);color:var(--muted);display:flex;align-items:center;gap:6px}
+.finale{margin:18px 16px 0;padding:18px;border-radius:20px;background:linear-gradient(135deg,rgba(124,156,255,.18),rgba(255,107,139,.14));border:1px solid var(--line)}
+.finale h3{margin:0 0 6px;font-family:var(--display);font-size:1.1rem}
+.finale p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.5}
+
+/* ---------- Map markers ---------- */
+.mk{width:30px;height:30px;border-radius:50%;background:var(--c);display:grid;place-items:center;font:700 12px var(--mono);color:#0b1220;border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.5);transition:transform .25s}
+.mk.done{background:var(--done)}
+.mk.done::after{content:"✓";font-size:13px}
+.mk.done span{display:none}
+.mk.hl{transform:scale(1.35);box-shadow:0 0 0 6px rgba(246,196,83,.45),0 3px 10px rgba(0,0,0,.5)}
+.mk.hotel{width:38px;height:38px;border-radius:12px;background:#fff;font-size:20px}
+.me{width:20px;height:20px;border-radius:50%;background:var(--me);border:3px solid #fff;box-shadow:0 0 0 0 rgba(59,139,255,.6);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(59,139,255,.55)}70%{box-shadow:0 0 0 18px rgba(59,139,255,0)}100%{box-shadow:0 0 0 0 rgba(59,139,255,0)}}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0f1830;color:var(--txt);border:1px solid var(--line)}
+.leaflet-popup-content{font-family:var(--body);margin:10px 14px;font-size:.88rem}
+.leaflet-popup-content b{font-family:var(--display);font-size:1rem}
+.leaflet-container a.leaflet-popup-close-button{color:var(--muted)}
+.leaflet-control-attribution{background:rgba(0,0,0,.45)!important;color:#bbb!important;font-size:9px!important}
+.leaflet-control-attribution a{color:#ddd!important}
+.route-anim{transition:stroke-dashoffset 4s cubic-bezier(.45,.05,.2,1)}
+
+/* confetti */
+.cf{position:fixed;z-index:900;width:8px;height:12px;border-radius:2px;pointer-events:none;animation:cf 1.1s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes cf{to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+
+button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+@media (min-width:900px){
+  .sheet{left:12px;right:auto;width:420px;top:calc(var(--st) + 84px);bottom:12px;height:auto;transform:none!important;border-radius:24px;border:1px solid var(--line)}
+  .handle{display:none}
+  .top{right:auto;width:420px}
 }
-*,*::before,*::after{box-sizing:inherit}
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;height:100%;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
-.app{display:flex;flex-direction:column;height:100%}
-
-header{background:var(--danube);color:#fff;padding:14px 16px 12px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
-header h1{font-family:var(--display);font-weight:800;font-size:1.55rem;line-height:1;margin:0;letter-spacing:-.02em}
-header p{margin:4px 0 0;font-size:.85rem;color:#b9c6d8}
-.clock{font-family:var(--display);font-weight:700;font-size:1.4rem;color:var(--tram);font-variant-numeric:tabular-nums}
-
-#map{height:42vh;min-height:240px;flex:none;background:var(--stone);position:relative;z-index:0}
-.mapbar{position:absolute;right:10px;bottom:10px;z-index:500;display:flex;flex-direction:column;gap:8px}
-.mapbar button{width:44px;height:44px;border-radius:50%;border:0;background:var(--card);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.25);font-size:20px;display:grid;place-items:center;cursor:pointer}
-.mapbar button.on{background:#1f7aff;color:#fff}
-.toast{position:absolute;left:10px;right:64px;bottom:10px;z-index:500;background:var(--danube);color:#fff;padding:8px 12px;border-radius:10px;font-size:.85rem;display:none}
-
-.list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 0 24px}
-.progress{display:flex;align-items:center;gap:10px;padding:10px 16px 4px;font-size:.85rem;color:var(--muted)}
-.bar{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
-.bar i{display:block;height:100%;width:0;background:var(--zsolnay);transition:width .3s}
-
-.stop{display:grid;grid-template-columns:62px 1fr;padding:0 16px 0 0}
-.time{font-family:var(--display);font-weight:700;font-size:1.05rem;text-align:right;padding:14px 12px 0 0;font-variant-numeric:tabular-nums;color:var(--muted)}
-.body{border-left:3px solid var(--line);padding:12px 0 16px 16px;position:relative}
-.body::before{content:"";position:absolute;left:-9px;top:18px;width:15px;height:15px;border-radius:50%;background:var(--c);border:3px solid var(--paper)}
-.stop.now .time{color:var(--ink)}
-.stop.now .body{border-left-color:var(--tram)}
-.stop.done .body h2{text-decoration:line-through;text-decoration-thickness:2px;opacity:.55}
-.body h2{font-family:var(--display);font-weight:700;font-size:1.2rem;line-height:1.15;margin:0 0 4px;letter-spacing:-.01em}
-.badge{display:inline-block;background:var(--tram);color:var(--danube);font-weight:600;font-size:.75rem;padding:1px 8px;border-radius:20px;margin-left:6px;vertical-align:2px}
-.body p{margin:0 0 8px;color:var(--muted);font-size:.95rem;max-width:62ch}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
-.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:20px;padding:5px 11px;font:inherit;font-size:.85rem;cursor:pointer}
-.chip:active{background:var(--stone)}
-.actions{display:flex;gap:8px}
-.actions button,.actions a{font:inherit;font-size:.88rem;font-weight:600;border-radius:10px;padding:8px 12px;text-decoration:none;border:0;cursor:pointer}
-.go{background:var(--danube);color:#fff}
-.chk{background:var(--stone);color:var(--ink)}
-.stop.done .chk{background:var(--zsolnay);color:#fff}
-.transit{margin-left:62px;padding:2px 0 2px 19px;border-left:3px dashed var(--line);font-size:.82rem;color:var(--muted)}
-.note{margin:16px;padding:14px;border-radius:12px;background:var(--stone);font-size:.92rem}
-.note b{font-family:var(--display)}
-button:focus-visible,a:focus-visible{outline:3px solid var(--tram);outline-offset:2px}
-
-.pin{width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:grid;place-items:center}
-.pin span{transform:rotate(45deg);color:#fff;font:700 12px/1 var(--display)}
-.sub{width:12px;height:12px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
-.me{width:18px;height:18px;border-radius:50%;background:#1f7aff;border:3px solid #fff;box-shadow:0 0 0 6px rgba(31,122,255,.25)}
-.leaflet-popup-content{font-family:var(--body);font-size:.9rem;margin:10px 12px}
-.leaflet-popup-content b{font-family:var(--display)}
-@media (min-width:860px){
-  .app{display:grid;grid-template-columns:1fr 420px;grid-template-rows:auto 1fr}
-  header{grid-column:1/-1}
-  #map{height:auto}
-}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <div>
-      <h1>Budapest an einem Tag</h1>
-      <p id="sub">9 Etappen, Pest und Buda</p>
+<div id="map"></div>
+
+<div class="top">
+  <div class="brand">
+    <div class="ring">
+      <svg viewBox="0 0 46 46"><defs><linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="#ffb86b"/><stop offset="1" stop-color="#3ddc97"/></linearGradient></defs>
+        <circle class="bg" cx="23" cy="23" r="19"/><circle class="fg" id="ringFg" cx="23" cy="23" r="19" stroke-dasharray="119.4" stroke-dashoffset="119.4"/></svg>
+      <b id="ringTxt">0%</b>
     </div>
-    <div class="clock" id="clock">--:--</div>
-  </header>
-  <div id="map">
-    <div class="toast" id="toast"></div>
-    <div class="mapbar">
-      <button id="locBtn" aria-label="Meinen Standort anzeigen">📍</button>
-      <button id="layerBtn" aria-label="Zur Strassenkarte wechseln">🗺️</button>
-      <button id="fitBtn" aria-label="Ganze Route zeigen">⤢</button>
+    <div class="txt">
+      <h1><em>Budapest</em> zu Fuss</h1>
+      <div class="meta" id="meta">Smart Hotel, Rundtour</div>
     </div>
   </div>
-  <div class="list" id="list">
-    <div class="progress"><span id="progTxt">0 von 9 erledigt</span><div class="bar"><i id="progBar"></i></div></div>
+  <div class="clock"><div class="t" id="clock">--:--</div><div class="s" id="sunset">🌅 --:--</div></div>
+</div>
+
+<div class="ctrls">
+  <button id="locBtn" aria-label="Live-Standort">📍</button>
+  <button id="playBtn" class="play" aria-label="Tour abspielen">▶</button>
+  <button id="layerBtn" aria-label="Kartenstil wechseln">🗺️</button>
+  <button id="fitBtn" aria-label="Ganze Route">⤢</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="sheet" id="sheet">
+  <div class="grab" id="grab">
+    <div class="handle"></div>
+    <div class="next" id="next"></div>
+    <div class="stats">
+      <div class="stat"><b id="sKm">--</b><span>km</span></div>
+      <div class="stat"><b id="sSteps">--</b><span>Schritte</span></div>
+      <div class="stat"><b id="sWalk">--</b><span>reine Gehzeit</span></div>
+      <div class="stat"><b id="sStops">0/0</b><span>Stopps</span></div>
+    </div>
   </div>
+  <div class="scroll" id="scroll"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-const PLAN = [
- {t:"08:00",end:"09:00",title:"Parlament",c:"#14243a",
-  text:"Start am Kossuth-Lajos-Platz. Parlament von außen anschauen, dann zu Fuss weiter Richtung Szabadság tér.",
-  places:[["Parlament / Kossuth tér",47.5070,19.0457]]},
- {t:"09:00",end:"10:00",title:"St.-Stephans-Basilika",c:"#b4532a",
-  text:"Szabadság tér, Basilika und die Staatsoper von außen. Bei der Oper beginnt die Andrássy út.",
-  places:[["Szabadság tér",47.5040,19.0503],["St.-Stephans-Basilika",47.5009,19.0539],["Ungarische Staatsoper",47.5027,19.0584],["Andrássy út (Start)",47.5035,19.0598]]},
- {t:"10:00",end:"12:15",title:"Andrássy út bis Heldenplatz",c:"#d17a22",
-  text:"Die ganze Andrássy út zu Fuss hoch (ca. 2,5 km, 40 Min.). Dann Heldenplatz, Museum der Bildenden Künste, Kunsthalle, Burg Vajdahunyad, Stadtwäldchen und House of Music.",
-  places:[["Andrássy út / Oktogon",47.5056,19.0636],["Heldenplatz",47.5149,19.0779],["Museum der Bildenden Künste",47.5161,19.0763],["Kunsthalle",47.5141,19.0795],["Burg Vajdahunyad",47.5153,19.0843],["Stadtwäldchen (Városliget)",47.5168,19.0810],["House of Music",47.5181,19.0773]]},
- {t:"12:15",end:"13:15",title:"Váci utca und Vörösmarty tér",c:"#c9962b",
-  text:"Vörösmarty tér, Kettenbrücke, Donaupromenade und durch die Váci utca Richtung Markthalle.",
-  places:[["Vörösmarty tér",47.4963,19.0509],["Kettenbrücke (Pester Seite)",47.4993,19.0466],["Donaupromenade",47.4955,19.0475],["Váci utca",47.4920,19.0555]],
-  before:"🚇 Metro M1 ab Hősök tere bis Vörösmarty tér (fährt unter der Andrássy út). Oder zu Fuss zurück, ca. 40 Min."},
- {t:"13:15",end:"14:15",title:"Große Markthalle",c:"#2f6b4f",
-  text:"Mittagessen in der Markthalle, danach über die Freiheitsbrücke nach Buda.",
-  places:[["Große Markthalle",47.4869,19.0586],["Freiheitsbrücke",47.4858,19.0540]]},
- {t:"14:15",end:"16:00",title:"Gellértberg und Zitadelle",c:"#6a4c93",
-  text:"Aufstieg zur Zitadelle mit Aussicht und Fotos. Blick auf Donau, Parlament, Kettenbrücke, Burg und Freiheitsbrücke.",
-  places:[["Freiheitsstatue / Zitadelle",47.4866,19.0468]],must:true},
- {t:"16:00",end:"16:30",title:"Várkert Bazár",c:"#3a7ca5",
-  text:"Gartenanlagen, historische Gebäude und Blick auf die Donau.",
-  places:[["Várkert Bazár",47.4950,19.0418]]},
- {t:"16:30",end:"19:00",title:"Budaer Burgviertel",c:"#9b2335",
-  text:"Burg, Präsidentenpalast, historische Gassen, Matthiaskirche und Fischerbastei. Fischerbastei am besten zum Sonnenuntergang, mit dem Parlament im Hintergrund.",
-  places:[["Budaer Burg",47.4961,19.0398],["Präsidentenpalast",47.4984,19.0389],["Historische Gassen (Úri utca)",47.5005,19.0337],["Matthiaskirche",47.5019,19.0342],["Fischerbastei",47.5024,19.0350]],must:true},
- {t:"19:00",end:"23:00",title:"Budapest bei Nacht",c:"#1f3f6e",
-  text:"Vom Burgviertel zu Fuss runter und über die Kettenbrücke ans Pester Ufer. Kurz der Donaupromenade entlang, dann Richtung Parlament. Beleuchtetes Parlament, Kettenbrücke und Blick auf die Burg. Alternativ eine Schifffahrt.",
-  places:[["Kettenbrücke bei Nacht",47.4990,19.0455],["Donaupromenade (Blick auf die Burg)",47.4960,19.0472],["Pester Ufer mit Parlamentsblick",47.5065,19.0440]]}
+/* =================== DATA =================== */
+const HOTEL=[47.50759,19.07197];
+const SECTIONS=[
+  {n:"Start",c:"#ffffff",c2:"#ffb86b"},
+  {n:"Stadtwäldchen am Morgen",c:"#ffb86b",c2:"#f6c453"},
+  {n:"Andrássy út hinunter",c:"#f6c453",c2:"#4fc3f7"},
+  {n:"Donau und Innenstadt",c:"#4fc3f7",c2:"#b388ff"},
+  {n:"Gellértberg",c:"#b388ff",c2:"#ff6b8b"},
+  {n:"Budaer Burgviertel",c:"#ff6b8b",c2:"#7c9cff"},
+  {n:"Budapest bei Nacht",c:"#7c9cff",c2:"#ffffff"}
 ];
+const STOPS=[
+ {s:0,t:"08:00",e:"🏨",n:"Smart Hotel Budapest",ll:HOTEL,hotel:1,d:"Los geht's. Bequeme Schuhe an, heute kommen einige Kilometer zusammen. Der Heldenplatz ist nur etwa 15 Minuten entfernt."},
+ {s:1,t:"08:15",e:"🏛️",n:"Heldenplatz",ll:[47.5149,19.0779],d:"Millenniumsdenkmal mit den sieben Stammesfürsten. Am Morgen fast leer, ideal für Fotos ohne Menschenmassen."},
+ {s:1,t:"08:30",e:"🖼️",n:"Kunsthalle",ll:[47.5141,19.0795],d:"Die Ausstellungshalle direkt am Heldenplatz, von außen."},
+ {s:1,t:"08:40",e:"🏺",n:"Museum der Bildenden Künste",ll:[47.5161,19.0763],d:"Gegenüber der Kunsthalle, mit der mächtigen Säulenfassade."},
+ {s:1,t:"09:00",e:"🏰",n:"Burg Vajdahunyad",ll:[47.5153,19.0843],d:"Die Märchenburg am See, ein Mix aus Baustilen aus ganz Ungarn."},
+ {s:1,t:"09:30",e:"🌳",n:"Stadtwäldchen",ll:[47.5168,19.0810],d:"Gemütlich durch den Park Városliget Richtung House of Music."},
+ {s:1,t:"10:00",end:"10:50",e:"🎵",n:"House of Music",ll:[47.5181,19.0773],warn:"Mo geschlossen",d:"Öffnet um 10:00. Das Dach von Sou Fujimoto mit den Lichtlöchern ist allein schon den Besuch wert."},
+ {s:2,t:"10:50",e:"🛣️",n:"Andrássy út",ll:[47.5096,19.0690],d:"Der Prachtboulevard (UNESCO-Welterbe) zu Fuss hinunter, vorbei am Kodály körönd und am Oktogon. Etwa 2,5 km."},
+ {s:2,t:"11:30",e:"🎭",n:"Ungarische Staatsoper",ll:[47.5027,19.0584],d:"Das Neorenaissance-Opernhaus von außen."},
+ {s:2,t:"11:45",e:"⛪",n:"St.-Stephans-Basilika",ll:[47.5009,19.0539],d:"Die grösste Kirche Budapests. Optional hoch auf die Kuppel-Terrasse."},
+ {s:2,t:"12:20",e:"🌿",n:"Szabadság tér",ll:[47.5040,19.0503],d:"Der Freiheitsplatz zwischen Basilika und Parlament."},
+ {s:2,t:"12:35",e:"🏛️",n:"Parlament",ll:[47.5070,19.0457],d:"Am Kossuth-Lajos-Platz das Parlament von außen bestaunen."},
+ {s:3,t:"12:55",e:"🌉",n:"Kettenbrücke",ll:[47.4993,19.0466],d:"Die berühmteste Brücke der Stadt, hier erst einmal von der Pester Seite."},
+ {s:3,t:"13:05",e:"🌊",n:"Donaupromenade",ll:[47.4955,19.0475],d:"Dem Ufer entlang mit Blick auf die Burg gegenüber."},
+ {s:3,t:"13:15",e:"☕",n:"Vörösmarty tér",ll:[47.4963,19.0509],d:"Der Platz mit dem Café Gerbeaud und Start der Váci utca."},
+ {s:3,t:"13:25",e:"🛍️",n:"Váci utca",ll:[47.4920,19.0555],d:"Die Fussgängerzone bis zur Markthalle hinunter."},
+ {s:3,t:"13:45",end:"14:30",e:"🥘",n:"Große Markthalle",ll:[47.4869,19.0586],warn:"So geschlossen",d:"Mittagessen oben auf der Galerie, zum Beispiel Lángos. Samstags nur bis ca. 15:00 offen."},
+ {s:4,t:"14:30",e:"🌉",n:"Freiheitsbrücke",ll:[47.4858,19.0540],d:"Die grüne Brücke hinüber nach Buda."},
+ {s:4,t:"15:00",end:"16:15",e:"⛰️",n:"Zitadelle und Freiheitsstatue",ll:[47.4866,19.0468],must:1,d:"Steiler Aufstieg, dafür die beste Aussicht der Stadt: Donau, Parlament, Kettenbrücke, Burg und Freiheitsbrücke."},
+ {s:5,t:"16:35",e:"🌷",n:"Várkert Bazár",ll:[47.4950,19.0418],d:"Gartenanlagen, historische Gebäude und Blick auf die Donau."},
+ {s:5,t:"17:00",e:"👑",n:"Budaer Burg",ll:[47.4961,19.0398],d:"Der Königspalast auf dem Burgberg."},
+ {s:5,t:"17:30",e:"🎖️",n:"Präsidentenpalast",ll:[47.4984,19.0389],d:"Das Sándor-Palais, Sitz des Staatspräsidenten."},
+ {s:5,t:"17:45",e:"🏘️",n:"Historische Gassen",ll:[47.5005,19.0337],d:"Durch die Úri utca und die Táncsics Mihály utca schlendern."},
+ {s:5,t:"18:05",e:"⛪",n:"Matthiaskirche",ll:[47.5019,19.0342],d:"Mit dem bunten Ziegeldach aus Zsolnay-Keramik."},
+ {s:5,t:"18:20",end:"19:05",e:"🌅",n:"Fischerbastei",ll:[47.5024,19.0350],must:1,sunset:1,d:"Zum Sonnenuntergang hier sein: Parlament im Hintergrund, die Stadt wird golden."},
+ {s:6,t:"19:20",e:"✨",n:"Kettenbrücke bei Nacht",ll:[47.4990,19.0455],d:"Den Burgberg hinunter und über die beleuchtete Brücke zurück nach Pest."},
+ {s:6,t:"19:35",e:"🌃",n:"Donaupromenade bei Nacht",ll:[47.5022,19.0450],d:"Am Pester Ufer nach Norden, Blick zurück auf die beleuchtete Burg."},
+ {s:6,t:"19:50",e:"💡",n:"Parlament beleuchtet",ll:[47.5060,19.0443],d:"Das Highlight zum Schluss: das goldene Parlament direkt am Wasser."},
+ {s:6,t:"20:15",end:"21:00",e:"🏨",n:"Zurück im Hotel",ll:HOTEL,hotel:1,d:"Gemütlich zurück zum Smart Hotel, etwa 40 Minuten. Geschafft!"}
+];
+STOPS.forEach((p,i)=>{p.i=i;p.c=SECTIONS[p.s].c;p.c2=SECTIONS[p.s].c2;p.endT=p.end||(STOPS[i+1]?STOPS[i+1].t:"23:59")});
 
+/* =================== HELPERS =================== */
 const $=s=>document.querySelector(s);
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-let done=store.get("bp-done")||{};
+let done=store.get("bpw-done")||{};
 const toMin=s=>{const[a,b]=s.split(":").map(Number);return a*60+b};
-function toast(msg,ms=3500){const el=$("#toast");el.textContent=msg;el.style.display="block";clearTimeout(el._t);el._t=setTimeout(()=>el.style.display="none",ms)}
+const pad=n=>String(n).padStart(2,"0");
+function hav(a,b){const R=6371000,r=Math.PI/180,dLa=(b[0]-a[0])*r,dLo=(b[1]-a[1])*r;
+  const x=Math.sin(dLa/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+function bearing(a,b){const r=Math.PI/180,y=Math.sin((b[1]-a[1])*r)*Math.cos(b[0]*r),
+  x=Math.cos(a[0]*r)*Math.sin(b[0]*r)-Math.sin(a[0]*r)*Math.cos(b[0]*r)*Math.cos((b[1]-a[1])*r);return (Math.atan2(y,x)/r+360)%360}
+const fmtDist=m=>m<1000?`${Math.round(m/10)*10} m`:`${(m/1000).toFixed(1).replace(".",",")} km`;
+const fmtMin=m=>Math.max(1,Math.round(m/75));            // ~4.5 km/h
+const nav=ll=>`https://maps.apple.com/?daddr=${ll[0]},${ll[1]}&dirflg=w`;
+function toast(m,ms=3200){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),ms)}
 
-/* ---------- Map ---------- */
-const dark=matchMedia("(prefers-color-scheme: dark)").matches;
-const map=L.map("map",{zoomControl:false,attributionControl:true}).setView([47.500,19.050],14);
-/* Base maps: satellite (default) and street map, with automatic fallback */
+/* Sunset for Budapest (NOAA approximation) */
+function sunset(d=new Date(),lat=47.4979,lng=19.0402){
+  const r=Math.PI/180,start=new Date(d.getFullYear(),0,0),N=Math.floor((d-start)/864e5);
+  const g=2*Math.PI/365*(N-1);
+  const eq=229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
+  const dec=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
+  const ha=Math.acos(Math.cos(90.833*r)/(Math.cos(lat*r)*Math.cos(dec))-Math.tan(lat*r)*Math.tan(dec))/r;
+  const utcMin=720-4*(lng-ha)-eq;                   // sunset in minutes UTC
+  const local=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),0,0)+utcMin*60000);
+  // show in Budapest time
+  return local.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Budapest"});
+}
+
+/* =================== MAP =================== */
+const map=L.map("map",{zoomControl:false,attributionControl:true,tap:true}).setView([47.502,19.055],14);
 const ESRI="https://server.arcgisonline.com/ArcGIS/rest/services/";
-const sat=L.layerGroup([
+const satLayer=L.layerGroup([
   L.tileLayer(ESRI+"World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri, Maxar, Earthstar Geographics"}),
-  L.tileLayer(ESRI+"Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,opacity:.7}),
+  L.tileLayer(ESRI+"Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,opacity:.6}),
   L.tileLayer(ESRI+"Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{maxZoom:19})
 ]);
 const STREET=[
-  [`https://{s}.basemaps.cartocdn.com/rastertiles/${dark?"dark_all":"voyager"}/{z}/{x}/{y}{r}.png`,{maxZoom:19,subdomains:"abcd",attribution:"© OpenStreetMap, © CARTO"}],
+  ["https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:19,subdomains:"abcd",attribution:"© OpenStreetMap, © CARTO"}],
   [ESRI+"World_Street_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri, © OpenStreetMap"}],
   ["https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}]
 ];
-let streetIdx=0,street=null,mode="sat";
-function makeStreet(){
-  let ok=0,err=0;
-  const l=L.tileLayer(STREET[streetIdx][0],STREET[streetIdx][1])
-    .on("tileload",()=>ok++)
-    .on("tileerror",()=>{err++;if(ok===0&&err>=3&&streetIdx<STREET.length-1){streetIdx++;map.removeLayer(l);street=makeStreet();street.addTo(map);street.bringToBack()}});
-  return l;
-}
-function setMode(m){
-  mode=m;
-  if(m==="sat"){if(street)map.removeLayer(street);sat.addTo(map)}
-  else{map.removeLayer(sat);street=street||makeStreet();street.addTo(map)}
-  $("#layerBtn").textContent=m==="sat"?"🗺️":"🛰️";
-  $("#layerBtn").setAttribute("aria-label",m==="sat"?"Zur Strassenkarte wechseln":"Zur Satellitenansicht wechseln");
-}
-
-const markers={};
-PLAN.forEach((s,i)=>{
-  s.places.forEach((p,j)=>{
-    const main=j===0;
-    const icon=L.divIcon({className:"",html:main?`<div class="pin" style="--c:${s.c}"><span>${i+1}</span></div>`:`<div class="sub" style="--c:${s.c}"></div>`,
-      iconSize:main?[28,28]:[12,12],iconAnchor:main?[14,28]:[6,6],popupAnchor:main?[0,-26]:[0,-6]});
-    const m=L.marker([p[1],p[2]],{icon,zIndexOffset:main?1000:0}).addTo(map)
-      .bindPopup(`<b>${p[0]}</b><br>${s.t} ${s.title}<br><a href="${navLink(p[1],p[2])}">Zu Fuss hin navigieren</a>`);
-    markers[`${i}-${j}`]=m;
-  });
-});
-function navLink(lat,lng){return `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=w`}
-
-/* Route: walking legs fetched from OSM foot router, metro legs dashed */
-const legs=[];
-let cur=[];
-PLAN.forEach(s=>{
-  if(s.before){legs.push({walk:true,pts:cur});legs.push({walk:false,pts:[cur[cur.length-1],[s.places[0][1],s.places[0][2]]]});cur=[]}
-  s.places.forEach(p=>cur.push([p[1],p[2]]));
-});
-legs.push({walk:true,pts:cur});
-
-const allPts=PLAN.flatMap(s=>s.places.map(p=>[p[1],p[2]]));
-const bounds=L.latLngBounds(allPts);
-map.fitBounds(bounds,{padding:[30,30]});
-
-legs.forEach(async leg=>{
-  if(!leg.walk){L.polyline(leg.pts,{color:"#ffffff",weight:4,dashArray:"2 10",lineCap:"round"}).addTo(map);return}
-  const fallback=()=>L.polyline(leg.pts,{color:"#f2c230",weight:4,opacity:.9,dashArray:"8 6"}).addTo(map);
-  try{
-    const coords=leg.pts.map(p=>`${p[1]},${p[0]}`).join(";");
-    const r=await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/driving/${coords}?overview=full&geometries=geojson`);
-    const j=await r.json();
-    if(!j.routes||!j.routes[0])throw 0;
-    const line=j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
-    L.polyline(line,{color:"#14243a",weight:8,opacity:.6}).addTo(map);
-    L.polyline(line,{color:"#f2c230",weight:4.5,opacity:1}).addTo(map);
-  }catch(e){fallback()}
-});
-
+let sIdx=0,street=null,mode="sat";
+function makeStreet(){let ok=0,err=0;const l=L.tileLayer(STREET[sIdx][0],STREET[sIdx][1]).on("tileload",()=>ok++)
+  .on("tileerror",()=>{err++;if(!ok&&err>=3&&sIdx<STREET.length-1){sIdx++;map.removeLayer(l);street=makeStreet();if(mode==="street")street.addTo(map)}});return l}
+function setMode(m){mode=m;if(m==="sat"){street&&map.removeLayer(street);satLayer.addTo(map)}else{map.removeLayer(satLayer);street=street||makeStreet();street.addTo(map)}
+  $("#layerBtn").textContent=m==="sat"?"🗺️":"🛰️"}
 setMode("sat");
 $("#layerBtn").onclick=()=>setMode(mode==="sat"?"street":"sat");
-$("#fitBtn").onclick=()=>map.fitBounds(bounds,{padding:[30,30]});
 
-/* Live location */
-let watchId=null,meMarker=null,meCircle=null,follow=true;
+/* markers */
+const mk=[];
+STOPS.forEach((p,i)=>{
+  if(p.hotel&&i>0){mk[i]=mk[0];return}
+  const html=p.hotel?`<div class="mk hotel">🏨</div>`:`<div class="mk ${done[i]?"done":""}" style="--c:${p.c}"><span>${i}</span></div>`;
+  const sz=p.hotel?38:30;
+  const m=L.marker(p.ll,{icon:L.divIcon({className:"",html,iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]}),zIndexOffset:p.hotel?3000:1000+i})
+    .addTo(map).bindPopup(`<b>${p.e} ${p.n}</b><br><span style="color:#9aa8bb">${p.t} Uhr</span>`,{offset:[0,-10]});
+  m.on("click",()=>focusItem(i,false));
+  mk[i]=m;
+});
+const bounds=L.latLngBounds(STOPS.map(p=>p.ll));
+function fitAll(){map.fitBounds(bounds,{paddingTopLeft:[20,110],paddingBottomRight:[70,sheetPeek()+20]})}
+$("#fitBtn").onclick=fitAll;
+
+/* route: one walking loop through all stops */
+let legDist=STOPS.slice(1).map((p,i)=>hav(STOPS[i].ll,p.ll)*1.3);
+function drawRoute(latlngs){
+  L.polyline(latlngs,{color:"#000",weight:10,opacity:.35,lineJoin:"round"}).addTo(map);
+  const glow=L.polyline(latlngs,{color:"#f6c453",weight:9,opacity:.25,lineJoin:"round"}).addTo(map);
+  const line=L.polyline(latlngs,{color:"#f6c453",weight:4,opacity:1,lineJoin:"round",lineCap:"round"}).addTo(map);
+  [glow,line].forEach(l=>{const el=l.getElement&&l.getElement();if(!el||!el.getTotalLength)return;
+    const len=el.getTotalLength();el.style.strokeDasharray=len;el.style.strokeDashoffset=len;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{el.classList.add("route-anim");el.style.strokeDashoffset=0}));
+    setTimeout(()=>{el.style.strokeDasharray="";el.classList.remove("route-anim")},4300)});
+  Object.values(mk).forEach(m=>m.setZIndexOffset&&m.setZIndexOffset(1000));
+}
+(async()=>{
+  const pts=STOPS.map(p=>`${p.ll[1]},${p.ll[0]}`).join(";");
+  try{
+    const r=await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/driving/${pts}?overview=full&geometries=geojson&steps=false`);
+    const j=await r.json();if(!j.routes||!j.routes[0])throw 0;
+    drawRoute(j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]));
+    legDist=j.routes[0].legs.map(l=>l.distance);
+  }catch(e){drawRoute(STOPS.map(p=>p.ll));toast("Route vereinfacht dargestellt (offline?)")}
+  renderWalks();updateStats();
+})();
+
+/* live location */
+let watchId=null,meM=null,meC=null,me=null,first=true;
 $("#locBtn").onclick=()=>{
-  if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;$("#locBtn").classList.remove("on");
-    if(meMarker){map.removeLayer(meMarker);map.removeLayer(meCircle);meMarker=null}return}
-  if(!("geolocation" in navigator)){toast("Dieses Gerät gibt keinen Standort frei.");return}
-  $("#locBtn").classList.add("on");follow=true;toast("Suche Standort …",2000);
+  if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;me=null;$("#locBtn").classList.remove("on");
+    meM&&(map.removeLayer(meM),map.removeLayer(meC),meM=null);renderNext();return}
+  if(!("geolocation" in navigator)){toast("Standort wird hier nicht unterstützt");return}
+  $("#locBtn").classList.add("on");first=true;toast("Suche deinen Standort …",1800);
   watchId=navigator.geolocation.watchPosition(pos=>{
-    const ll=[pos.coords.latitude,pos.coords.longitude];
-    if(!meMarker){
-      meMarker=L.marker(ll,{icon:L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18],iconAnchor:[9,9]}),zIndexOffset:2000}).addTo(map);
-      meCircle=L.circle(ll,{radius:pos.coords.accuracy,color:"#1f7aff",weight:1,fillOpacity:.08}).addTo(map);
-    }else{meMarker.setLatLng(ll);meCircle.setLatLng(ll).setRadius(pos.coords.accuracy)}
-    if(follow){map.setView(ll,Math.max(map.getZoom(),16));follow=false}
-  },err=>{
-    $("#locBtn").classList.remove("on");watchId=null;
-    toast(err.code===1?"Standort blockiert. In Safari öffnen und Ortungsdienste für Safari erlauben.":"Standort gerade nicht verfügbar. Nochmal tippen.",5000);
-  },{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
+    me=[pos.coords.latitude,pos.coords.longitude];
+    if(!meM){meM=L.marker(me,{icon:L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[20,20],iconAnchor:[10,10]}),zIndexOffset:5000}).addTo(map);
+      meC=L.circle(me,{radius:pos.coords.accuracy,color:"#3b8bff",weight:1,fillOpacity:.1}).addTo(map)}
+    else{meM.setLatLng(me);meC.setLatLng(me).setRadius(pos.coords.accuracy)}
+    if(first){map.flyTo(me,17,{duration:1});first=false}
+    renderNext();
+  },err=>{$("#locBtn").classList.remove("on");watchId=null;
+    toast(err.code===1?"Standort blockiert: Einstellungen › Datenschutz › Ortungsdienste › Safari erlauben":"Standort gerade nicht verfügbar",5000)},
+  {enableHighAccuracy:true,maximumAge:4000,timeout:15000});
 };
 
-/* ---------- Timeline ---------- */
-const list=$("#list");
-PLAN.forEach((s,i)=>{
-  if(s.before){const tr=document.createElement("div");tr.className="transit";tr.textContent=s.before;list.appendChild(tr)}
-  const el=document.createElement("section");
-  el.className="stop";el.id="s"+i;el.style.setProperty("--c",s.c);
-  const p0=s.places[0];
-  el.innerHTML=`<div class="time">${s.t}</div>
-   <div class="body">
-     <h2>${s.title}<span class="badge nowb" hidden>Jetzt</span>${s.must?'<span class="badge" style="background:var(--zsolnay);color:#fff">Unbedingt</span>':""}</h2>
-     <p>${s.text}</p>
-     <div class="chips">${s.places.map((p,j)=>`<button class="chip" data-k="${i}-${j}">${p[0]}</button>`).join("")}</div>
-     <div class="actions">
-       <a class="go" href="${navLink(p0[1],p0[2])}">Navigieren</a>
-       <button class="chk" data-i="${i}">${done[i]?"Erledigt ✓":"Als erledigt markieren"}</button>
-     </div>
-   </div>`;
-  if(done[i])el.classList.add("done");
-  list.appendChild(el);
-});
-const note=document.createElement("div");note.className="note";
-note.innerHTML="<b>Wenn die Zeit knapp wird:</b> zuerst Váci utca oder Stadtwäldchen kürzen. Zitadelle und Fischerbastei behalten.";
-list.appendChild(note);
-
-list.addEventListener("click",e=>{
-  const chip=e.target.closest(".chip");
-  if(chip){const m=markers[chip.dataset.k];map.flyTo(m.getLatLng(),17,{duration:.8});m.openPopup();
-    document.getElementById("map").scrollIntoView({behavior:"smooth",block:"start"});return}
-  const chk=e.target.closest(".chk");
-  if(chk){const i=chk.dataset.i;done[i]=!done[i];store.set("bp-done",done);
-    const st=document.getElementById("s"+i);st.classList.toggle("done",!!done[i]);
-    chk.textContent=done[i]?"Erledigt ✓":"Als erledigt markieren";updateProgress()}
-});
-
-function updateProgress(){
-  const n=Object.values(done).filter(Boolean).length;
-  $("#progTxt").textContent=`${n} von ${PLAN.length} erledigt`;
-  $("#progBar").style.width=(n/PLAN.length*100)+"%";
+/* =================== LIST =================== */
+const scroll=$("#scroll");
+function renderList(){
+  let html="",lastS=-1;
+  STOPS.forEach((p,i)=>{
+    if(p.s!==lastS){const sec=SECTIONS[p.s];html+=`<div class="sec" style="--c:${sec.c}"><h2>${sec.n}</h2><span>ab ${p.t}</span></div>`;lastS=p.s}
+    if(i>0)html+=`<div class="walk" data-w="${i-1}">🚶 …</div>`;
+    const tags=(p.must?'<span class="tag must">Unbedingt</span>':"")+(p.warn?`<span class="tag warn">${p.warn}</span>`:"")+'<span class="tag now" hidden>Jetzt</span>';
+    html+=`<div class="item ${done[i]?"done":""}" id="it${i}" style="--c:${p.c};--c2:${p.c2}">
+      <div class="tm">${p.t}</div>
+      <div class="card"><div class="dot">${p.hotel?"H":i}</div>
+        <h3><span class="e">${p.e}</span>${p.n}${tags}</h3>
+        <p>${p.d}</p>
+        <div class="acts">
+          <button class="btn ghost" data-show="${i}">Auf Karte</button>
+          <a class="btn ghost" href="${nav(p.ll)}">Navigieren</a>
+          <button class="btn ${done[i]?"ok":"ghost"}" data-chk="${i}">${done[i]?"✓ Erledigt":"Abhaken"}</button>
+        </div></div></div>`;
+  });
+  html+=`<div class="finale"><h3>Wenn die Zeit knapp wird</h3><p>Zuerst Váci utca oder Stadtwäldchen kürzen. Zitadelle und Fischerbastei auf jeden Fall behalten, die sind das Herz dieses Tages.</p></div>`;
+  scroll.innerHTML=html;
 }
+function renderWalks(){document.querySelectorAll(".walk").forEach(el=>{const d=legDist[+el.dataset.w];el.textContent=`🚶 ${fmtDist(d)}, ca. ${fmtMin(d)} Min.`})}
+renderList();
+
+scroll.addEventListener("click",e=>{
+  const s=e.target.closest("[data-show]");if(s){focusItem(+s.dataset.show,true);return}
+  const c=e.target.closest("[data-chk]");if(c){toggleDone(+c.dataset.chk,c)}
+});
+function toggleDone(i,btn){
+  done[i]=!done[i];store.set("bpw-done",done);
+  const it=$("#it"+i);it.classList.toggle("done",!!done[i]);
+  btn.className="btn "+(done[i]?"ok":"ghost");btn.textContent=done[i]?"✓ Erledigt":"Abhaken";
+  const el=mk[i].getElement&&mk[i].getElement().firstChild;if(el&&!STOPS[i].hotel)el.classList.toggle("done",!!done[i]);
+  if(done[i]){confetti(btn);if(navigator.vibrate)navigator.vibrate(20)}
+  updateStats();renderNext();
+}
+function confetti(el){const r=el.getBoundingClientRect(),cols=["#f6c453","#ff6b8b","#3ddc97","#4fc3f7","#b388ff","#fff"];
+  for(let k=0;k<26;k++){const s=document.createElement("i");s.className="cf";s.style.left=(r.left+r.width/2)+"px";s.style.top=(r.top+r.height/2)+"px";
+    s.style.background=cols[k%cols.length];const a=Math.random()*Math.PI*2,d=60+Math.random()*90;
+    s.style.setProperty("--x",Math.cos(a)*d+"px");s.style.setProperty("--y",(Math.sin(a)*d-50)+"px");s.style.setProperty("--r",(Math.random()*720-360)+"deg");
+    document.body.appendChild(s);setTimeout(()=>s.remove(),1200)}}
+
+let activeI=-1;
+function highlight(i){
+  if(activeI>=0){$("#it"+activeI)?.classList.remove("active");const o=mk[activeI].getElement&&mk[activeI].getElement().firstChild;o&&o.classList.remove("hl")}
+  activeI=i;$("#it"+i)?.classList.add("active");const n=mk[i].getElement&&mk[i].getElement().firstChild;n&&n.classList.add("hl");
+}
+function focusItem(i,fromList){
+  highlight(i);
+  map.flyTo(STOPS[i].ll,17,{duration:.9,paddingBottomRight:[0,0]});
+  setTimeout(()=>mk[i].openPopup(),900);
+  if(fromList){if(!wide())setState("peek")}
+  else{const it=$("#it"+i);it&&it.scrollIntoView({behavior:"smooth",block:"center"})}
+}
+
+/* =================== NEXT + STATS =================== */
+function nextIndex(){const i=STOPS.findIndex((p,k)=>!done[k]);return i<0?null:i}
+function renderNext(){
+  const i=nextIndex(),box=$("#next");
+  if(i===null){box.innerHTML=`<div class="ico" style="--c:#3ddc97">🏆</div><div class="info"><div class="lbl">Geschafft</div><div class="name">Budapest erobert!</div><div class="sub">Alle Stopps abgehakt</div></div>`;return}
+  const p=STOPS[i];let sub=`${p.t} Uhr`;
+  if(me){const d=hav(me,p.ll),b=bearing(me,p.ll);sub=`<span class="arrow" style="transform:rotate(${b}deg)">⬆</span>${fmtDist(d)}, ca. ${fmtMin(d*1.25)} Min.`}
+  else if(i>0)sub+=`, ${fmtDist(legDist[i-1])} vom letzten Stopp`;
+  box.innerHTML=`<div class="ico" style="--c:${p.c}">${p.e}</div>
+    <div class="info"><div class="lbl">${i===0?"Start":"Nächster Halt"}</div><div class="name">${p.n}</div><div class="sub">${sub}</div></div>
+    <a class="btn gold" href="${nav(p.ll)}" onclick="event.stopPropagation()">Los</a>`;
+}
+function updateStats(){
+  const total=legDist.reduce((a,b)=>a+b,0),n=Object.values(done).filter(Boolean).length,pct=Math.round(n/STOPS.length*100);
+  $("#sKm").textContent=(total/1000).toFixed(1).replace(".",",");
+  $("#sSteps").textContent=(Math.round(total*1.35/1000)).toString()+"k";
+  const wm=Math.round(total/75);$("#sWalk").textContent=`${Math.floor(wm/60)}h${pad(wm%60)}`;
+  $("#sStops").textContent=`${n}/${STOPS.length}`;
+  $("#ringFg").style.strokeDashoffset=119.4*(1-n/STOPS.length);$("#ringTxt").textContent=pct+"%";
+  $("#meta").textContent=`${STOPS.length-2} Sehenswürdigkeiten, ${(total/1000).toFixed(1).replace(".",",")} km Rundtour`;
+}
+
+/* clock + "now" */
 function tick(){
-  const d=new Date(),hh=String(d.getHours()).padStart(2,"0"),mm=String(d.getMinutes()).padStart(2,"0");
-  $("#clock").textContent=`${hh}:${mm}`;
+  const d=new Date();$("#clock").textContent=`${pad(d.getHours())}:${pad(d.getMinutes())}`;
   const now=d.getHours()*60+d.getMinutes();
-  let active=-1;
-  PLAN.forEach((s,i)=>{const on=now>=toMin(s.t)&&now<toMin(s.end);if(on)active=i;
-    const el=document.getElementById("s"+i);el.classList.toggle("now",on);el.querySelector(".nowb").hidden=!on});
-  const nxt=PLAN.find(s=>toMin(s.t)>now);
-  $("#sub").textContent=active>=0?`Jetzt: ${PLAN[active].title}`:nxt?`Als Nächstes um ${nxt.t}: ${nxt.title}`:"Tag geschafft";
-  return active;
+  STOPS.forEach((p,i)=>{const on=now>=toMin(p.t)&&now<toMin(p.endT);const it=$("#it"+i);if(!it)return;
+    it.classList.toggle("now",on);it.querySelector(".tag.now").hidden=!on});
 }
-updateProgress();
-const a=tick();
-if(a>=0)setTimeout(()=>document.getElementById("s"+a).scrollIntoView({block:"start"}),300);
-setInterval(tick,30000);
+const ss=sunset();$("#sunset").textContent="🌅 "+ss;
+STOPS.find(p=>p.sunset).d+=` Sonnenuntergang heute ca. ${ss} Uhr.`;
+renderList();renderWalks();
+
+/* =================== TOUR PLAYBACK =================== */
+let playing=false,pt=null;
+$("#playBtn").onclick=()=>{
+  if(playing){stopTour();return}
+  playing=true;$("#playBtn").classList.add("on");$("#playBtn").textContent="■";if(!wide())setState("peek");
+  let i=0;const step=()=>{if(!playing)return;if(i>=STOPS.length-1){stopTour();fitAll();toast("Das war die Tour. Viel Spass morgen!");return}
+    highlight(i);map.flyTo(STOPS[i].ll,16.5,{duration:1.6});const p=STOPS[i];toast(`${p.t}  ${p.e} ${p.n}`,2400);i++;pt=setTimeout(step,2600)};
+  step();
+};
+function stopTour(){playing=false;clearTimeout(pt);$("#playBtn").classList.remove("on");$("#playBtn").textContent="▶"}
+
+/* =================== BOTTOM SHEET =================== */
+const sheet=$("#sheet"),grab=$("#grab");
+const wide=()=>innerWidth>=900;
+function sheetPeek(){return wide()?0:grab.offsetHeight+4}
+let state="peek",y=0;
+function posFor(s){const H=innerHeight;return s==="full"?Math.max(60,H*0.1):s==="half"?H*0.45:H-sheetPeek()}
+function setState(s,anim=true){state=s;y=posFor(s);sheet.classList.toggle("anim",anim);sheet.style.transform=`translateY(${y}px)`}
+let startY=0,startPos=0,moved=false,dragging=false;
+grab.addEventListener("pointerdown",e=>{if(wide()||e.target.closest("a"))return;dragging=true;moved=false;startY=e.clientY;startPos=y;sheet.classList.remove("anim");grab.setPointerCapture(e.pointerId)});
+grab.addEventListener("pointermove",e=>{if(!dragging)return;const dy=e.clientY-startY;if(Math.abs(dy)>6)moved=true;
+  y=Math.min(innerHeight-sheetPeek()+40,Math.max(40,startPos+dy));sheet.style.transform=`translateY(${y}px)`});
+grab.addEventListener("pointerup",e=>{if(!dragging)return;dragging=false;
+  if(!moved){setState(state==="peek"?"half":state==="half"?"full":"peek");return}
+  const opts=["full","half","peek"].map(s=>[s,Math.abs(posFor(s)-y)]).sort((a,b)=>a[1]-b[1]);setState(opts[0][0])});
+scroll.addEventListener("touchstart",()=>{if(!wide()&&state!=="full")setState("full")},{passive:true});
+addEventListener("resize",()=>setState(state,false));
+
+/* =================== INIT =================== */
+renderNext();updateStats();tick();setInterval(tick,30000);
+requestAnimationFrame(()=>{setState("peek",false);requestAnimationFrame(()=>{fitAll();
+  const d=new Date(),now=d.getHours()*60+d.getMinutes(),cur=STOPS.findIndex(p=>now>=toMin(p.t)&&now<toMin(p.endT));
+  if(cur>0)$("#it"+cur).scrollIntoView({block:"center"})})});
+if(new Date().getDay()===1)setTimeout(()=>toast("Achtung: Heute ist Montag, das House of Music ist geschlossen",5000),1500);
+if(new Date().getDay()===0)setTimeout(()=>toast("Achtung: Sonntags ist die Große Markthalle geschlossen",5000),1500);
 </script>
 </body>
 </html>
